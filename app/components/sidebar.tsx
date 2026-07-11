@@ -6,6 +6,7 @@ import { FaSearch } from "react-icons/fa";
 import { TbReload, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-icons/tb";
 import { RiChatNewLine } from 'react-icons/ri';
 import { BsWindowSidebar } from 'react-icons/bs';
+import { useChat } from '../lib/chat-context';
 
 export default function SidebarComponent({
   collapsed,
@@ -14,9 +15,11 @@ export default function SidebarComponent({
   collapsed: boolean;
   setCollapsed: (value: boolean) => void;
 }) {
+  const { chats, activeChatId, createChat, selectChat } = useChat();
+
   return (
     <div
-      className={`fixed top-8 left-8 bottom-8 z-50 overflow-hidden rounded-[36px] border border-slate-950/20 bg-slate-950 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.95)] transition-all duration-300 ${
+      className={`fixed z-50 h-full overflow-hidden bg-slate-950 transition-all duration-300 ${
         collapsed ? 'w-20' : 'w-80'
       }`}
     >
@@ -101,11 +104,24 @@ export default function SidebarComponent({
               },
             }}
           >
-            <MenuItem icon={<RiChatNewLine />}>{!collapsed && 'New Chat'}</MenuItem>
+            <MenuItem icon={<RiChatNewLine />} onClick={createChat}>
+              {!collapsed && 'New Chat'}
+            </MenuItem>
             <MenuItem icon={<FaSearch />}>{!collapsed && 'Search Chat'}</MenuItem>
-            <SubMenu label={!collapsed && 'History'} icon={<TbReload />}>
-              <MenuItem icon={<GrChat />}>{!collapsed && 'Chat 1'}</MenuItem>
-              <MenuItem icon={<GrChat />}>{!collapsed && 'Chat 2'}</MenuItem>
+            <SubMenu label={!collapsed && `History (${chats.length})`} icon={<TbReload />}>
+              {chats.length === 0 && (
+                <MenuItem disabled>{!collapsed && 'No chats yet'}</MenuItem>
+              )}
+              {chats.map((chat) => (
+                <MenuItem
+                  key={chat.id}
+                  icon={<GrChat />}
+                  active={chat.id === activeChatId}
+                  onClick={() => selectChat(chat.id)}
+                >
+                  {!collapsed && (chat.title || 'New Chat')}
+                </MenuItem>
+              ))}
             </SubMenu>
           </Menu>
 
@@ -115,7 +131,10 @@ export default function SidebarComponent({
               <div className="rounded-3xl bg-slate-900 p-5 text-slate-100 shadow-xl shadow-slate-950/60">
                 <div className="text-sm font-semibold text-slate-100">Need a quick start?</div>
                 <p className="mt-2 text-sm text-slate-400">Create new chats and organize your workflow with the sidebar.</p>
-                <button className="mt-4 w-full text-white rounded-2xl bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400">
+                <button
+                  onClick={createChat}
+                  className="mt-4 w-full text-white rounded-2xl bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+                >
                   Start New Chat
                 </button>
               </div>

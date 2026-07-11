@@ -1,0 +1,109 @@
+'use client';
+
+import { createContext, useContext, useState, ReactNode } from 'react';
+
+export type Message = {
+  id: string;
+  role: 'user' | 'bot';
+  content: string;
+  timestamp: number;
+};
+
+export type Chat = {
+  id: string;
+  title: string;
+  messages: Message[];
+};
+
+type ChatContextValue = {
+  chats: Chat[];
+  activeChatId: string | null;
+  activeChat: Chat | undefined;
+  createChat: () => void;
+  selectChat: (id: string) => void;
+  sendMessage: (content: string) => void;
+};
+
+const ChatContext = createContext<ChatContextValue | undefined>(undefined);
+
+function makeId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+  const activeChat = chats.find((c) => c.id === activeChatId);
+
+  function createChat() {
+    const newChat: Chat = {
+      id: makeId(),
+      title: 'New Chat',
+      messages: [],
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
+  }
+
+  function selectChat(id: string) {
+    setActiveChatId(id);
+  }
+
+  function sendMessage(content: string) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+
+    // If there's no active chat yet, create one on the fly.
+    let chatId = activeChatId;
+    let currentChats = chats;
+
+    if (!chatId) {
+      const newChat: Chat = { id: makeId(), title: 'New Chat', messages: [] };
+      currentChats = [newChat, ...chats];
+      chatId = newChat.id;
+      setActiveChatId(chatId);
+    }
+
+    setChats((prevChats) => {
+      const base = chatId === activeChatId ? prevChats : currentChats;
+      return base.map((chat) => {
+        if (chat.id !== chatId) return chat;
+
+        const lastRole = chat.messages[chat.messages.length - 1]?.role;
+        const nextRole: 'user' | 'bot' =
+          chat.messages.length === 0 ? 'user' : lastRole === 'user' ? 'bot' : 'user';
+
+        const newMessage: Message = {
+          id: makeId(),
+          role: nextRole,
+          content: trimmed,
+          timestamp: Date.now(),
+        };
+
+        const isFirstMessage = chat.messages.length === 0;
+        return {
+          ...chat,
+          title: isFirstMessage ? trimmed.slice(0, 30) : chat.title,
+          messages: [...chat.messages, newMessage],
+        };
+      });
+    });
+  }
+
+  return (
+    <ChatContext.Provider
+      value={{ chats, activeChatId, activeChat, createChat, selectChat, sendMessage }}
+    >
+      {children}
+    </ChatContext.Provider>
+  );
+}
+
+export function useChat() {
+  const ctx = useContext(ChatContext);
+  if (!ctx) throw new Error('useChat must be used within a ChatProvider');
+  return ctx;
+}
