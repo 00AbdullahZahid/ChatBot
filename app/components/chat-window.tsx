@@ -5,14 +5,18 @@ import { useChat } from '../lib/chat-context';
 import { IoSend } from 'react-icons/io5';
 
 export default function ChatWindow() {
-  const { activeChat, sendMessage } = useChat();
+  const { activeChat, activeChatId, sendMessage } = useChat();
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages.length]);
 
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, [activeChatId]);
   function handleSend() {
     if (!input.trim()) return;
     sendMessage(input);
@@ -65,17 +69,15 @@ export default function ChatWindow() {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                message.role === 'user'
-                  ? 'bg-sky-500 text-slate-950 rounded-br-sm'
-                  : 'bg-slate-800 text-slate-100 rounded-bl-sm'
-              }`}
+              className={`max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user'
+                ? 'bg-sky-500 text-slate-950 rounded-br-sm'
+                : 'bg-slate-800 text-slate-100 rounded-bl-sm'
+                }`}
             >
               <div>{message.content}</div>
               <div
-                className={`mt-1 text-[10px] ${
-                  message.role === 'user' ? 'text-slate-900/60' : 'text-slate-400'
-                }`}
+                className={`mt-1 text-[10px] ${message.role === 'user' ? 'text-slate-900/60' : 'text-slate-400'
+                  }`}
               >
                 {message.role === 'user' ? 'You' : 'Bot'} ·{' '}
                 {new Date(message.timestamp).toLocaleTimeString([], {
@@ -99,6 +101,7 @@ export default function ChatWindow() {
         <div className="flex items-end gap-3">
           <textarea
             value={input}
+            ref={textareaRef}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={nextRole === 'user' ? 'Type a message as yourself...' : 'Type the bot reply...'}

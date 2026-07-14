@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type Message = {
   id: string;
@@ -35,8 +35,42 @@ function makeId() {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-
+  const [hydrated, setHydrated] = useState(false);
   const activeChat = chats.find((c) => c.id === activeChatId);
+
+  useEffect(() => {
+    let loadedChats: Chat[] = [];
+    let loadedActiveId: string | null = null;
+
+    try {
+      const savedChats = localStorage.getItem('chats');
+      loadedChats = savedChats ? JSON.parse(savedChats) : [];
+      loadedActiveId = localStorage.getItem('activeChatId');
+    } catch {
+      loadedChats = [];
+    }
+
+    if (loadedChats.length === 0) {
+      const newChat: Chat = { id: makeId(), title: 'New Chat', messages: [] };
+      loadedChats = [newChat];
+      loadedActiveId = newChat.id;
+    }
+
+    setChats(loadedChats);
+    setActiveChatId(loadedActiveId);
+    setHydrated(true);
+  }, []);
+
+  // Only start saving AFTER the initial load above has finished
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem('chats', JSON.stringify(chats));
+  }, [chats, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || !activeChatId) return;
+    localStorage.setItem('activeChatId', activeChatId);
+  }, [activeChatId, hydrated]);
 
   function createChat() {
     const newChat: Chat = {
