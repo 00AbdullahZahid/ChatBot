@@ -21,6 +21,7 @@ type ChatContextValue = {
   activeChat: Chat | undefined;
   createChat: () => void;
   selectChat: (id: string) => void;
+  deleteChat: (id: string) => void;
   sendMessage: (content: string) => void;
 };
 
@@ -48,12 +49,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       loadedActiveId = localStorage.getItem('activeChatId');
     } catch {
       loadedChats = [];
+      loadedActiveId = null;
     }
 
-    if (loadedChats.length === 0) {
-      const newChat: Chat = { id: makeId(), title: 'New Chat', messages: [] };
-      loadedChats = [newChat];
-      loadedActiveId = newChat.id;
+    if (!loadedActiveId) {
+      if (!loadedActiveId && loadedChats.length > 0) {
+        loadedActiveId = loadedChats[0].id;
+      } else {
+        const newChat: Chat = { id: makeId(), title: 'New Chat', messages: [] };
+        loadedChats = [newChat];
+        loadedActiveId = newChat.id;
+      }
     }
 
     setChats(loadedChats);
@@ -73,15 +79,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [activeChatId, hydrated]);
 
   function createChat() {
-    const newChat: Chat = {
-      id: makeId(),
-      title: 'New Chat',
-      messages: [],
-    };
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
+    setActiveChatId(null);
   }
 
+  function deleteChat(id: string) {
+    setChats((prevChats) => {
+      const remaingChats = prevChats.filter((chat) => chat.id !== id);
+      if (id === activeChatId) {
+        setActiveChatId(remaingChats.length > 0 ? remaingChats[0].id : null);
+      }
+      return remaingChats;
+    });
+  }
   function selectChat(id: string) {
     setActiveChatId(id);
   }
@@ -129,7 +138,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   return (
     <ChatContext.Provider
-      value={{ chats, activeChatId, activeChat, createChat, selectChat, sendMessage }}
+      value={{ chats, activeChatId, activeChat, createChat, selectChat, deleteChat, sendMessage }}
     >
       {children}
     </ChatContext.Provider>

@@ -35,59 +35,49 @@ export default function ChatWindow() {
   const nextRole: 'user' | 'bot' =
     !activeChat || activeChat.messages.length === 0 ? 'user' : lastRole === 'user' ? 'bot' : 'user';
 
-  if (!activeChat) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center py-16 px-8 text-slate-100">
-        <h1 className="text-4xl font-bold mb-4">Welcome to the Chat App</h1>
-        <p className="text-lg text-slate-300">
-          This is a simple chat application built with Next.js and React.
-        </p>
-        <p className="mt-2 text-sm text-slate-500">
-          Start a new chat from the sidebar to begin.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/80 px-8 py-5 backdrop-blur">
-        <h2 className="text-lg font-semibold">{activeChat.title || 'New Chat'}</h2>
+        <h2 className="text-lg font-semibold">{activeChat?.title || 'New Chat'}</h2>
       </div>
 
-      {/* Messages */}
+      {/* Messages OR welcome state */}
       <div className="flex-1 space-y-4 overflow-y-auto px-8 py-6">
-        {activeChat.messages.length === 0 && (
-          <p className="text-center text-sm text-slate-500 mt-10">
-            No messages yet — send the first one below.
-          </p>
-        )}
-        {activeChat.messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+        {!activeChat ? (
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <h1 className="text-4xl font-bold mb-4">Welcome to the Chat App</h1>
+            <p className="text-lg text-slate-300">This is a simple chat application built with Next.js and React.</p>
+          </div>
+        ) : activeChat.messages.length === 0 ? (
+          <p className="text-center text-sm text-slate-500 mt-10">No messages yet — send the first one below.</p>
+        ) : (
+          activeChat.messages.map((message) => (
             <div
-              className={`max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user'
-                ? 'bg-sky-500 text-slate-950 rounded-br-sm'
-                : 'bg-slate-800 text-slate-100 rounded-bl-sm'
-                }`}
+              key={message.id}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div>{message.content}</div>
               <div
-                className={`mt-1 text-[10px] ${message.role === 'user' ? 'text-slate-900/60' : 'text-slate-400'
+                className={`max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user'
+                  ? 'bg-sky-500 text-slate-950 rounded-br-sm'
+                  : 'bg-slate-800 text-slate-100 rounded-bl-sm'
                   }`}
               >
-                {message.role === 'user' ? 'You' : 'Bot'} ·{' '}
-                {new Date(message.timestamp).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                <div>{message.content}</div>
+                <div
+                  className={`mt-1 text-[10px] ${message.role === 'user' ? 'text-slate-900/60' : 'text-slate-400'
+                    }`}
+                >
+                  {message.role === 'user' ? 'You' : 'Bot'} ·{' '}
+                  {new Date(message.timestamp).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
         <div ref={bottomRef} />
       </div>
 
